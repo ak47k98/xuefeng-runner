@@ -61,6 +61,9 @@
         // Global web audio context for playing sounds.
         this.audioContext = null;
 
+        // BGM.
+        this.bgmAudio = null;
+
         // Images.
         this.images = {};
         this.imagesLoaded = 0;
@@ -327,6 +330,9 @@
                         this.soundFx[index] = audioData;
                     }.bind(this, sound));
                 }
+
+                // BGM element reference.
+                this.bgmAudio = document.getElementById('bgm-audio');
             }
         },
 
@@ -518,6 +524,8 @@
 
             window.addEventListener(Runner.events.FOCUS,
                 this.onVisibilityChange.bind(this));
+
+            this.playBgm();
         },
 
         clearCanvas: function () {
@@ -682,6 +690,7 @@
                     e.type == Runner.events.TOUCHSTART)) {
                     if (!this.playing) {
                         this.loadSounds();
+                        this.playBgm();
                         this.playing = true;
                         this.update();
                         if (window.errorPageController) {
@@ -779,6 +788,7 @@
          */
         gameOver: function () {
             this.playSound(this.soundFx.HIT);
+            this.stopBgm();
             vibrate(200);
 
             this.stop();
@@ -839,6 +849,7 @@
                 this.tRex.reset();
                 this.playSound(this.soundFx.BUTTON_PRESS);
                 this.invert(true);
+                this.playBgm();
                 this.update();
             }
         },
@@ -879,9 +890,13 @@
             if (document.hidden || document.webkitHidden || e.type == 'blur' ||
                 document.visibilityState != 'visible') {
                 this.stop();
+                this.stopBgm();
             } else if (!this.crashed) {
                 this.tRex.reset();
                 this.play();
+                if (this.playing) {
+                    this.playBgm();
+                }
             }
         },
 
@@ -895,6 +910,23 @@
                 sourceNode.buffer = soundBuffer;
                 sourceNode.connect(this.audioContext.destination);
                 sourceNode.start(0);
+            }
+        },
+
+        playBgm: function () {
+            if (this.bgmAudio && this.bgmAudio.paused) {
+                this.bgmAudio.volume = 0.3;
+                var playPromise = this.bgmAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {});
+                }
+            }
+        },
+
+        stopBgm: function () {
+            if (this.bgmAudio) {
+                this.bgmAudio.pause();
+                this.bgmAudio.currentTime = 0;
             }
         },
 
