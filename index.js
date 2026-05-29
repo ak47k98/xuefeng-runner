@@ -607,7 +607,7 @@
                             coin.remove = true;
                             this.distanceRan += 200;
                             this.coinScore++;
-                            if (this.coinScore === 0 || this.coinScore % 3 === 0) {
+                            if (this.coinScore === 0 /* || this.coinScore % 3 === 0 */) {
                                 this.playQiaoleziSound();
                             }
                         }
@@ -1007,7 +1007,7 @@
         playQiaoleziSound: function () {
             if (this.qiaoleziAudio) {
                 this.qiaoleziAudio.currentTime = 0;
-                this.qiaoleziAudio.volume = 0.5;
+                this.qiaoleziAudio.volume = 0.625;
                 var playPromise = this.qiaoleziAudio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(function () {});
