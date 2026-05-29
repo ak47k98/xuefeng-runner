@@ -1053,18 +1053,21 @@
         startSoundPool: function () {
             if (this.soundPoolStarted) return;
             this.soundPoolStarted = true;
-            this.scheduleNextSoundPool(10000);
+            this.scheduleNextSoundPool(true);
         },
 
-        scheduleNextSoundPool: function (delay) {
+        scheduleNextSoundPool: function (isFirst) {
             var self = this;
-            var randomDelay = delay + Math.random() * 30000;
+            var baseDelay = isFirst ? 10000 : 30000;
+            var randomDelay = Math.random() * 30000;
+            var totalDelay = baseDelay + randomDelay;
+            
             this.soundPoolTimer = setTimeout(function () {
                 if (self.playing && !self.crashed) {
                     self.playRandomSoundFromPool();
                 }
-                self.scheduleNextSoundPool(0);
-            }, randomDelay);
+                self.scheduleNextSoundPool(false);
+            }, totalDelay);
         },
 
         stopSoundPool: function () {
