@@ -69,6 +69,12 @@
         this.endBgmAudio = null;
         this.startAudio = null;
         this.qiaoleziAudio = null;
+        this.fateAudio = null;
+        this.runAudio = null;
+
+        // Sound pool.
+        this.soundPoolTimer = null;
+        this.soundPoolStarted = false;
 
         // Images.
         this.images = {};
@@ -345,6 +351,8 @@
                 this.endBgmAudio = document.getElementById('end-bgm-audio');
                 this.startAudio = document.getElementById('start-audio');
                 this.qiaoleziAudio = document.getElementById('qiaolezi-audio');
+                this.fateAudio = document.getElementById('fate-audio');
+                this.runAudio = document.getElementById('run-audio');
             }
         },
 
@@ -539,6 +547,7 @@
 
             this.playStartSound();
             this.playBgm();
+            this.startSoundPool();
         },
 
         clearCanvas: function () {
@@ -822,6 +831,7 @@
         gameOver: function () {
             this.playSound(this.soundFx.HIT);
             this.stopBgm();
+            this.stopSoundPool();
             this.playEndBgm();
             vibrate(200);
             document.body.classList.add(Runner.classes.CRASHED);
@@ -879,6 +889,7 @@
                 this.setSpeed(this.config.SPEED);
                 this.time = getTimeStamp();
                 this.stopEndBgm();
+                this.stopSoundPool();
                 document.body.classList.remove(Runner.classes.CRASHED);
                 this.containerEl.classList.remove(Runner.classes.CRASHED);
                 this.clearCanvas();
@@ -889,6 +900,7 @@
                 this.playStartSound();
                 this.invert(true);
                 this.playBgm();
+                this.startSoundPool();
                 this.update();
             }
         },
@@ -931,11 +943,13 @@
                 this.stop();
                 this.stopBgm();
                 this.stopEndBgm();
+                this.stopSoundPool();
             } else if (!this.crashed) {
                 this.tRex.reset();
                 this.play();
                 if (this.playing) {
                     this.playBgm();
+                    this.startSoundPool();
                 }
             } else if (this.crashed) {
                 this.playEndBgm();
@@ -1009,6 +1023,72 @@
                 this.qiaoleziAudio.currentTime = 0;
                 this.qiaoleziAudio.volume = 0.625;
                 var playPromise = this.qiaoleziAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {});
+                }
+            }
+        },
+
+        startSoundPool: function () {
+            if (this.soundPoolStarted) return;
+            this.soundPoolStarted = true;
+            this.scheduleNextSoundPool(10000);
+        },
+
+        scheduleNextSoundPool: function (delay) {
+            var self = this;
+            var randomDelay = delay + Math.random() * 30000;
+            this.soundPoolTimer = setTimeout(function () {
+                if (self.playing && !self.crashed) {
+                    self.playRandomSoundFromPool();
+                }
+                self.scheduleNextSoundPool(0);
+            }, randomDelay);
+        },
+
+        stopSoundPool: function () {
+            if (this.soundPoolTimer) {
+                clearTimeout(this.soundPoolTimer);
+                this.soundPoolTimer = null;
+            }
+            this.soundPoolStarted = false;
+        },
+
+        playRandomSoundFromPool: function () {
+            var pool = [
+                { audio: this.fateAudio, weight: 1 },
+                { audio: this.qiaoleziAudio, weight: 0.25 },
+                { audio: this.runAudio, weight: 1 }
+            ];
+
+            var distance = Math.ceil(this.distanceRan);
+            if (distance >= 4200) {
+                pool[2].weight = 4;
+            } else if (distance >= 2100) {
+                pool[2].weight = 2;
+            }
+
+            var totalWeight = 0;
+            for (var i = 0; i < pool.length; i++) {
+                totalWeight += pool[i].weight;
+            }
+
+            var random = Math.random() * totalWeight;
+            var cumulative = 0;
+            var selected = pool[0];
+
+            for (var j = 0; j < pool.length; j++) {
+                cumulative += pool[j].weight;
+                if (random < cumulative) {
+                    selected = pool[j];
+                    break;
+                }
+            }
+
+            if (selected.audio) {
+                selected.audio.currentTime = 0;
+                selected.audio.volume = 0.75;
+                var playPromise = selected.audio.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(function () {});
                 }
