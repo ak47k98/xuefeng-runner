@@ -829,9 +829,8 @@
          * Game over state.
          */
         gameOver: function () {
+            this.stopAllAudio();
             this.playSound(this.soundFx.HIT);
-            this.stopBgm();
-            this.stopSoundPool();
             this.playEndBgm();
             vibrate(200);
             document.body.classList.add(Runner.classes.CRASHED);
@@ -1002,6 +1001,28 @@
             if (this.endBgmAudio) {
                 this.endBgmAudio.pause();
                 this.endBgmAudio.currentTime = 0;
+            }
+        },
+
+        stopAllAudio: function () {
+            this.stopBgm();
+            this.stopEndBgm();
+            this.stopSoundPool();
+            if (this.startAudio) {
+                this.startAudio.pause();
+                this.startAudio.currentTime = 0;
+            }
+            if (this.qiaoleziAudio) {
+                this.qiaoleziAudio.pause();
+                this.qiaoleziAudio.currentTime = 0;
+            }
+            if (this.fateAudio) {
+                this.fateAudio.pause();
+                this.fateAudio.currentTime = 0;
+            }
+            if (this.runAudio) {
+                this.runAudio.pause();
+                this.runAudio.currentTime = 0;
             }
         },
 
