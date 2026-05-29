@@ -792,6 +792,7 @@
             this.playSound(this.soundFx.HIT);
             this.stopBgm();
             vibrate(200);
+            document.body.classList.add(Runner.classes.CRASHED);
 
             this.stop();
             this.crashed = true;
@@ -844,6 +845,7 @@
                 this.distanceRan = 0;
                 this.setSpeed(this.config.SPEED);
                 this.time = getTimeStamp();
+                document.body.classList.remove(Runner.classes.CRASHED);
                 this.containerEl.classList.remove(Runner.classes.CRASHED);
                 this.clearCanvas();
                 this.distanceMeter.reset(this.highestScore);
