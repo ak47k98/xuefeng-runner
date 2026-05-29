@@ -1106,7 +1106,7 @@
                 }
             }
 
-            if (selected.audio) {
+            if (selected.audio && selected.audio.paused) {
                 selected.audio.currentTime = 0;
                 selected.audio.volume = 0.75;
                 var playPromise = selected.audio.play();
