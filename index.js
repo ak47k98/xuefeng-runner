@@ -66,6 +66,8 @@
 
         // BGM.
         this.bgmAudio = null;
+        this.endBgmAudio = null;
+        this.startAudio = null;
 
         // Images.
         this.images = {};
@@ -339,6 +341,8 @@
 
                 // BGM element reference.
                 this.bgmAudio = document.getElementById('bgm-audio');
+                this.endBgmAudio = document.getElementById('end-bgm-audio');
+                this.startAudio = document.getElementById('start-audio');
             }
         },
 
@@ -531,6 +535,7 @@
             window.addEventListener(Runner.events.FOCUS,
                 this.onVisibilityChange.bind(this));
 
+            this.playStartSound();
             this.playBgm();
         },
 
@@ -811,6 +816,7 @@
         gameOver: function () {
             this.playSound(this.soundFx.HIT);
             this.stopBgm();
+            this.playEndBgm();
             vibrate(200);
             document.body.classList.add(Runner.classes.CRASHED);
 
@@ -866,6 +872,7 @@
                 this.coinScore = 0;
                 this.setSpeed(this.config.SPEED);
                 this.time = getTimeStamp();
+                this.stopEndBgm();
                 document.body.classList.remove(Runner.classes.CRASHED);
                 this.containerEl.classList.remove(Runner.classes.CRASHED);
                 this.clearCanvas();
@@ -873,6 +880,7 @@
                 this.horizon.reset();
                 this.tRex.reset();
                 this.playSound(this.soundFx.BUTTON_PRESS);
+                this.playStartSound();
                 this.invert(true);
                 this.playBgm();
                 this.update();
@@ -916,12 +924,15 @@
                 document.visibilityState != 'visible') {
                 this.stop();
                 this.stopBgm();
+                this.stopEndBgm();
             } else if (!this.crashed) {
                 this.tRex.reset();
                 this.play();
                 if (this.playing) {
                     this.playBgm();
                 }
+            } else if (this.crashed) {
+                this.playEndBgm();
             }
         },
 
@@ -952,6 +963,34 @@
             if (this.bgmAudio) {
                 this.bgmAudio.pause();
                 this.bgmAudio.currentTime = 0;
+            }
+        },
+
+        playEndBgm: function () {
+            if (this.endBgmAudio && this.endBgmAudio.paused) {
+                this.endBgmAudio.volume = 0.3;
+                var playPromise = this.endBgmAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {});
+                }
+            }
+        },
+
+        stopEndBgm: function () {
+            if (this.endBgmAudio) {
+                this.endBgmAudio.pause();
+                this.endBgmAudio.currentTime = 0;
+            }
+        },
+
+        playStartSound: function () {
+            if (this.startAudio) {
+                this.startAudio.currentTime = 0;
+                this.startAudio.volume = 0.5;
+                var playPromise = this.startAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {});
+                }
             }
         },
 
