@@ -968,11 +968,13 @@
 
         playEndBgm: function () {
             if (this.endBgmAudio && this.endBgmAudio.paused) {
-                this.endBgmAudio.volume = 0.3;
-                var playPromise = this.endBgmAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(function () {});
-                }
+                setTimeout(function () {
+                    this.endBgmAudio.volume = 0.3;
+                    var playPromise = this.endBgmAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function () {});
+                    }
+                }.bind(this), 500);
             }
         },
 
@@ -985,12 +987,14 @@
 
         playStartSound: function () {
             if (this.startAudio) {
-                this.startAudio.currentTime = 0;
-                this.startAudio.volume = 0.5;
-                var playPromise = this.startAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(function () {});
-                }
+                setTimeout(function () {
+                    this.startAudio.currentTime = 0;
+                    this.startAudio.volume = 0.5;
+                    var playPromise = this.startAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function () {});
+                    }
+                }.bind(this), 500);
             }
         },
 
