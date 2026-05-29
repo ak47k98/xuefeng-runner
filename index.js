@@ -55,7 +55,7 @@
         this.playCount = 0;
 
         // Coin collection.
-        this.coinScore = 0;
+        this.coinScore = -1;
 
         // Sound FX.
         this.audioBuffer = null;
@@ -68,6 +68,7 @@
         this.bgmAudio = null;
         this.endBgmAudio = null;
         this.startAudio = null;
+        this.qiaoleziAudio = null;
 
         // Images.
         this.images = {};
@@ -343,6 +344,7 @@
                 this.bgmAudio = document.getElementById('bgm-audio');
                 this.endBgmAudio = document.getElementById('end-bgm-audio');
                 this.startAudio = document.getElementById('start-audio');
+                this.qiaoleziAudio = document.getElementById('qiaolezi-audio');
             }
         },
 
@@ -604,6 +606,10 @@
                         if (boxCompare(trexBox, coinBox)) {
                             coin.remove = true;
                             this.distanceRan += 200;
+                            this.coinScore++;
+                            if (this.coinScore === 0 || this.coinScore % 3 === 0) {
+                                this.playQiaoleziSound();
+                            }
                         }
                     }
                 }
@@ -869,7 +875,7 @@
                 this.playing = true;
                 this.crashed = false;
                 this.distanceRan = 0;
-                this.coinScore = 0;
+                this.coinScore = -1;
                 this.setSpeed(this.config.SPEED);
                 this.time = getTimeStamp();
                 this.stopEndBgm();
@@ -974,7 +980,7 @@
                     if (playPromise !== undefined) {
                         playPromise.catch(function () {});
                     }
-                }.bind(this), 500);
+                }.bind(this), 250);
             }
         },
 
@@ -989,12 +995,23 @@
             if (this.startAudio) {
                 setTimeout(function () {
                     this.startAudio.currentTime = 0;
-                    this.startAudio.volume = 0.5;
+                    this.startAudio.volume = 0.25;
                     var playPromise = this.startAudio.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(function () {});
                     }
                 }.bind(this), 500);
+            }
+        },
+
+        playQiaoleziSound: function () {
+            if (this.qiaoleziAudio) {
+                this.qiaoleziAudio.currentTime = 0;
+                this.qiaoleziAudio.volume = 0.5;
+                var playPromise = this.qiaoleziAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {});
+                }
             }
         },
 
