@@ -54,6 +54,9 @@
 
         this.playCount = 0;
 
+        // Coin collection.
+        this.coinScore = 0;
+
         // Sound FX.
         this.audioBuffer = null;
         this.soundFx = {};
@@ -182,6 +185,7 @@
             CACTUS_LARGE: { x: 652, y: 2 },
             CACTUS_SMALL: { x: 446, y: 2 },
             CLOUD: { x: 166, y: 2 },
+            COIN: { x: 1292, y: 65 },
             HORIZON: { x: 2, y: 104 },
             MOON: { x: 954, y: 2 },
             PTERODACTYL: { x: 260, y: 2 },
@@ -583,6 +587,22 @@
                     this.gameOver();
                 }
 
+                // Draw and check coin collection.
+                for (var i = 0; i < this.horizon.coins.length; i++) {
+                    var coin = this.horizon.coins[i];
+                    coin.draw();
+                    if (!this.crashed) {
+                        var coinBox = coin.getBoundingBox();
+                        var trexBox = new CollisionBox(
+                            this.tRex.xPos + 1, this.tRex.yPos + 1,
+                            this.tRex.config.WIDTH - 2, this.tRex.config.HEIGHT - 2);
+                        if (boxCompare(trexBox, coinBox)) {
+                            coin.remove = true;
+                            this.distanceRan += 200;
+                        }
+                    }
+                }
+
                 var playAchievementSound = this.distanceMeter.update(deltaTime,
                     Math.ceil(this.distanceRan));
 
@@ -843,6 +863,7 @@
                 this.playing = true;
                 this.crashed = false;
                 this.distanceRan = 0;
+                this.coinScore = 0;
                 this.setSpeed(this.config.SPEED);
                 this.time = getTimeStamp();
                 document.body.classList.remove(Runner.classes.CRASHED);
@@ -1301,6 +1322,54 @@
 
 
     //******************************************************************************
+
+    /**
+     * Coin.
+     * @param {HTMLCanvasCtx} canvasCtx
+     * @param {Object} spritePos Coin position in sprite.
+     * @param {Object} dimensions
+     * @param {number} speed
+     */
+    function Coin(canvasCtx, spritePos, dimensions, speed) {
+        this.canvasCtx = canvasCtx;
+        this.spritePos = spritePos;
+        this.dimensions = dimensions;
+        this.xPos = dimensions.WIDTH;
+        this.yPos = getRandomNum(50, 90);
+        this.width = 20;
+        this.height = 20;
+        this.remove = false;
+    }
+
+    Coin.prototype = {
+        update: function (deltaTime, speed) {
+            if (!this.remove) {
+                this.xPos -= Math.floor((speed * FPS / 1000) * deltaTime);
+                if (this.xPos + this.width < 0) {
+                    this.remove = true;
+                }
+            }
+        },
+
+        draw: function () {
+            var sourceWidth = 20;
+            var sourceHeight = 18;
+            if (IS_HIDPI) {
+                sourceWidth *= 2;
+                sourceHeight *= 2;
+            }
+            this.canvasCtx.drawImage(Runner.imageSprite,
+                this.spritePos.x, this.spritePos.y,
+                sourceWidth, sourceHeight,
+                this.xPos, this.yPos,
+                this.width, this.height);
+        },
+
+        getBoundingBox: function () {
+            return new CollisionBox(this.xPos, this.yPos, this.width, this.height);
+        }
+    };
+
 
     /**
      * Obstacle.
@@ -2576,6 +2645,7 @@
         this.dimensions = dimensions;
         this.gapCoefficient = gapCoefficient;
         this.obstacles = [];
+        this.coins = [];
         this.obstacleHistory = [];
         this.horizonOffsets = [0, 0];
         this.cloudFrequency = this.config.CLOUD_FREQUENCY;
@@ -2701,6 +2771,29 @@
                 // Create new obstacles.
                 this.addNewObstacle(currentSpeed);
             }
+
+            // Update coins.
+            var updatedCoins = [];
+            for (var j = 0; j < this.coins.length; j++) {
+                this.coins[j].update(deltaTime, currentSpeed);
+                if (!this.coins[j].remove) {
+                    updatedCoins.push(this.coins[j]);
+                }
+            }
+            this.coins = updatedCoins;
+
+            // Rare random coin spawns with long, unpredictable gaps.
+            if (this.coinSpawnAt === undefined) {
+                this.coinSpawnAt = getRandomNum(-400, 200);
+            }
+            var lastCoin = this.coins.length > 0 ? this.coins[this.coins.length - 1] : null;
+            if (!lastCoin || lastCoin.xPos < this.coinSpawnAt) {
+                if (Math.random() < 0.01) {
+                    this.coins.push(new Coin(this.canvasCtx,
+                        this.spritePos.COIN, this.dimensions, currentSpeed));
+                    this.coinSpawnAt = getRandomNum(-3000, -200);
+                }
+            }
         },
 
         removeFirstObstacle: function () {
@@ -2756,6 +2849,8 @@
          */
         reset: function () {
             this.obstacles = [];
+            this.coins = [];
+            this.coinSpawnAt = undefined;
             this.horizonLine.reset();
             this.nightMode.reset();
         },
