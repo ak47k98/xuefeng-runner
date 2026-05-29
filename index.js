@@ -55,7 +55,7 @@
         this.playCount = 0;
 
         // Coin collection.
-        this.coinScore = 0;
+        this.coinScore = -1;
 
         // Sound FX.
         this.audioBuffer = null;
@@ -66,6 +66,15 @@
 
         // BGM.
         this.bgmAudio = null;
+        this.endBgmAudio = null;
+        this.startAudio = null;
+        this.qiaoleziAudio = null;
+        this.fateAudio = null;
+        this.runAudio = null;
+
+        // Sound pool.
+        this.soundPoolTimer = null;
+        this.soundPoolStarted = false;
 
         // Images.
         this.images = {};
@@ -213,8 +222,8 @@
      * @enum {Object}
      */
     Runner.keycodes = {
-        JUMP: { '38': 1, '32': 1 },  // Up, spacebar
-        DUCK: { '40': 1 },  // Down
+        JUMP: { '38': 1, '32': 1, '87': 1 },  // Up, spacebar, W
+        DUCK: { '40': 1, '83': 1 },  // Down, S
         RESTART: { '13': 1 }  // Enter
     };
 
@@ -339,6 +348,11 @@
 
                 // BGM element reference.
                 this.bgmAudio = document.getElementById('bgm-audio');
+                this.endBgmAudio = document.getElementById('end-bgm-audio');
+                this.startAudio = document.getElementById('start-audio');
+                this.qiaoleziAudio = document.getElementById('qiaolezi-audio');
+                this.fateAudio = document.getElementById('fate-audio');
+                this.runAudio = document.getElementById('run-audio');
             }
         },
 
@@ -531,7 +545,9 @@
             window.addEventListener(Runner.events.FOCUS,
                 this.onVisibilityChange.bind(this));
 
+            this.playStartSound();
             this.playBgm();
+            this.startSoundPool();
         },
 
         clearCanvas: function () {
@@ -599,6 +615,10 @@
                         if (boxCompare(trexBox, coinBox)) {
                             coin.remove = true;
                             this.distanceRan += 200;
+                            this.coinScore++;
+                            if (this.coinScore === 0 /* || this.coinScore % 3 === 0 */) {
+                                this.playQiaoleziSound();
+                            }
                         }
                     }
                 }
@@ -809,8 +829,9 @@
          * Game over state.
          */
         gameOver: function () {
+            this.stopAllAudio();
             this.playSound(this.soundFx.HIT);
-            this.stopBgm();
+            this.playEndBgm();
             vibrate(200);
             document.body.classList.add(Runner.classes.CRASHED);
 
@@ -863,9 +884,11 @@
                 this.playing = true;
                 this.crashed = false;
                 this.distanceRan = 0;
-                this.coinScore = 0;
+                this.coinScore = -1;
                 this.setSpeed(this.config.SPEED);
                 this.time = getTimeStamp();
+                this.stopEndBgm();
+                this.stopSoundPool();
                 document.body.classList.remove(Runner.classes.CRASHED);
                 this.containerEl.classList.remove(Runner.classes.CRASHED);
                 this.clearCanvas();
@@ -873,8 +896,10 @@
                 this.horizon.reset();
                 this.tRex.reset();
                 this.playSound(this.soundFx.BUTTON_PRESS);
+                this.playStartSound();
                 this.invert(true);
                 this.playBgm();
+                this.startSoundPool();
                 this.update();
             }
         },
@@ -916,12 +941,17 @@
                 document.visibilityState != 'visible') {
                 this.stop();
                 this.stopBgm();
+                this.stopEndBgm();
+                this.stopSoundPool();
             } else if (!this.crashed) {
                 this.tRex.reset();
                 this.play();
                 if (this.playing) {
                     this.playBgm();
+                    this.startSoundPool();
                 }
+            } else if (this.crashed) {
+                this.playEndBgm();
             }
         },
 
@@ -952,6 +982,137 @@
             if (this.bgmAudio) {
                 this.bgmAudio.pause();
                 this.bgmAudio.currentTime = 0;
+            }
+        },
+
+        playEndBgm: function () {
+            if (this.endBgmAudio && this.endBgmAudio.paused) {
+                setTimeout(function () {
+                    this.endBgmAudio.volume = 0.3;
+                    var playPromise = this.endBgmAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function () {});
+                    }
+                }.bind(this), 250);
+            }
+        },
+
+        stopEndBgm: function () {
+            if (this.endBgmAudio) {
+                this.endBgmAudio.pause();
+                this.endBgmAudio.currentTime = 0;
+            }
+        },
+
+        stopAllAudio: function () {
+            this.stopBgm();
+            this.stopEndBgm();
+            this.stopSoundPool();
+            if (this.startAudio) {
+                this.startAudio.pause();
+                this.startAudio.currentTime = 0;
+            }
+            if (this.qiaoleziAudio) {
+                this.qiaoleziAudio.pause();
+                this.qiaoleziAudio.currentTime = 0;
+            }
+            if (this.fateAudio) {
+                this.fateAudio.pause();
+                this.fateAudio.currentTime = 0;
+            }
+            if (this.runAudio) {
+                this.runAudio.pause();
+                this.runAudio.currentTime = 0;
+            }
+        },
+
+        playStartSound: function () {
+            if (this.startAudio) {
+                setTimeout(function () {
+                    this.startAudio.currentTime = 0;
+                    this.startAudio.volume = 0.25;
+                    var playPromise = this.startAudio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function () {});
+                    }
+                }.bind(this), 500);
+            }
+        },
+
+        playQiaoleziSound: function () {
+            if (this.qiaoleziAudio) {
+                this.qiaoleziAudio.currentTime = 0;
+                this.qiaoleziAudio.volume = 0.625;
+                var playPromise = this.qiaoleziAudio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {});
+                }
+            }
+        },
+
+        startSoundPool: function () {
+            if (this.soundPoolStarted) return;
+            this.soundPoolStarted = true;
+            this.scheduleNextSoundPool(10000);
+        },
+
+        scheduleNextSoundPool: function (delay) {
+            var self = this;
+            var randomDelay = delay + Math.random() * 30000;
+            this.soundPoolTimer = setTimeout(function () {
+                if (self.playing && !self.crashed) {
+                    self.playRandomSoundFromPool();
+                }
+                self.scheduleNextSoundPool(0);
+            }, randomDelay);
+        },
+
+        stopSoundPool: function () {
+            if (this.soundPoolTimer) {
+                clearTimeout(this.soundPoolTimer);
+                this.soundPoolTimer = null;
+            }
+            this.soundPoolStarted = false;
+        },
+
+        playRandomSoundFromPool: function () {
+            var pool = [
+                { audio: this.fateAudio, weight: 1 },
+                { audio: this.qiaoleziAudio, weight: 0.25 },
+                { audio: this.runAudio, weight: 1 }
+            ];
+
+            var distance = Math.ceil(this.distanceRan);
+            if (distance >= 4200) {
+                pool[2].weight = 4;
+            } else if (distance >= 2100) {
+                pool[2].weight = 2;
+            }
+
+            var totalWeight = 0;
+            for (var i = 0; i < pool.length; i++) {
+                totalWeight += pool[i].weight;
+            }
+
+            var random = Math.random() * totalWeight;
+            var cumulative = 0;
+            var selected = pool[0];
+
+            for (var j = 0; j < pool.length; j++) {
+                cumulative += pool[j].weight;
+                if (random < cumulative) {
+                    selected = pool[j];
+                    break;
+                }
+            }
+
+            if (selected.audio) {
+                selected.audio.currentTime = 0;
+                selected.audio.volume = 0.75;
+                var playPromise = selected.audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(function () {});
+                }
             }
         },
 
