@@ -369,6 +369,15 @@
          * Load and decode base 64 encoded sounds.
          */
         loadSounds: function () {
+            // iOS skips Web Audio decoding, but regular <audio> playback still
+            // works. Keep these references available on every platform.
+            this.bgmAudio = document.getElementById('bgm-audio');
+            this.endBgmAudio = document.getElementById('end-bgm-audio');
+            this.startAudio = document.getElementById('start-audio');
+            this.qiaoleziAudio = document.getElementById('qiaolezi-audio');
+            this.fateAudio = document.getElementById('fate-audio');
+            this.runAudio = document.getElementById('run-audio');
+
             if (!IS_IOS) {
                 this.audioContext = new AudioContext();
 
@@ -387,13 +396,6 @@
                     }.bind(this, sound));
                 }
 
-                // BGM element reference.
-                this.bgmAudio = document.getElementById('bgm-audio');
-                this.endBgmAudio = document.getElementById('end-bgm-audio');
-                this.startAudio = document.getElementById('start-audio');
-                this.qiaoleziAudio = document.getElementById('qiaolezi-audio');
-                this.fateAudio = document.getElementById('fate-audio');
-                this.runAudio = document.getElementById('run-audio');
             }
         },
 
@@ -976,8 +978,7 @@
             // height minus the game container height.
             const translateY = Math.ceil(Math.max(0, (windowHeight - scaledCanvasHeight -
                                                       Runner.config.ARCADE_MODE_INITIAL_TOP_POSITION) *
-                                                  Runner.config.ARCADE_MODE_TOP_POSITION_PERCENT)) *
-                  window.devicePixelRatio;
+                                                  Runner.config.ARCADE_MODE_TOP_POSITION_PERCENT));
 
             const cssScale = scale;
             this.containerEl.style.transform =
@@ -1218,8 +1219,8 @@
         var context = canvas.getContext('2d');
 
         // Query the various pixel ratios
-        var devicePixelRatio = Math.floor(window.devicePixelRatio) || 1;
-        var backingStoreRatio = Math.floor(context.webkitBackingStorePixelRatio) || 1;
+        var devicePixelRatio = window.devicePixelRatio || 1;
+        var backingStoreRatio = context.webkitBackingStorePixelRatio || 1;
         var ratio = devicePixelRatio / backingStoreRatio;
 
         // Upscale the canvas if the two ratios don't match
